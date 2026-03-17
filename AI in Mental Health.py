@@ -458,96 +458,96 @@ elif page == "Mood Tracking":
         email = st.text_input("Your Email")  # Use default type for email
 
         if st.button("Send Report"):
-        if name and email:
-            import re
-    
-            # Validate email format
-            if re.match(r"[^@]+@[^@]+\.[^@]+", email):
-    
-                # ---- SAFE DATA HANDLING ----
-                if not st.session_state.predictions.empty:
-                    latest_prediction = st.session_state.predictions.iloc[-1]
-                    latest_status = latest_prediction['Status']
-                    latest_date = latest_prediction['Date']
-                else:
-                    latest_status = "N/A"
-                    latest_date = "N/A"
-    
-                if not st.session_state.predictions.empty and 'Status' in st.session_state.predictions:
-                    average_status = st.session_state.predictions['Status'].value_counts().idxmax()
-                else:
-                    average_status = "N/A"
-    
-                # ---- RECOMMENDATIONS ----
-                recommendations = []
-    
-                if average_status == "Stable or Low Instability":
-                    recommendations = [
-                        "Maintain your current healthy habits.",
-                        "Consider sharing your positive experiences with others.",
-                        "Stay engaged in activities that bring you joy."
-                    ]
-                elif average_status == "Moderate Instability":
-                    recommendations = [
-                        "Reflect on your feelings and consider seeking support.",
-                        "Engage in activities that promote relaxation and well-being.",
-                        "Stay connected with friends and family."
-                    ]
-                elif average_status == "High Instability or Severe Instability":
-                    recommendations = [
-                        "It may be beneficial to consult with a mental health professional.",
-                        "Consider developing a self-care plan to manage stress.",
-                        "Reach out to support groups or community resources."
-                    ]
-    
-                # ---- FIXED STRING ISSUE ----
-                recommendations_text = "\n- ".join(recommendations)
-    
-                # ---- REPORT CONTENT ----
-                report_content = f"""
-    Dear {name},
-    
-    We hope this message finds you well. Below is your mental health report based on your recent mood tracking data.
-    
-    Latest Prediction Status: {latest_status}
-    Latest Prediction Date: {latest_date}
-    Average Prediction Status: {average_status}
-    
-    Personalized Recommendations:
-    - {recommendations_text}
-    
-    Thank you for using our service. If you have any questions or need further assistance, please do not hesitate to reach out.
-    
-    Best regards,  
-    Mental Health Support Team
-    """
-    
-                # ---- GRAPH ----
-                img = save_mood_tracking_graph()
-    
-                if img:
-                    img_file = io.BytesIO(img.getvalue())
-                    img_file.seek(0)
-                    img_file.name = "mood_tracking_graph.png"  # important
-    
-                    # ---- SEND EMAIL ----
-                    if send_email_with_attachment(
-                        email,
-                        "Your Mental Health Report",
-                        report_content,
-                        img_file
-                    ):
-                        st.success("Report sent successfully!")
+            if name and email:
+                import re
+        
+                # Validate email format
+                if re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        
+                    # ---- SAFE DATA HANDLING ----
+                    if not st.session_state.predictions.empty:
+                        latest_prediction = st.session_state.predictions.iloc[-1]
+                        latest_status = latest_prediction['Status']
+                        latest_date = latest_prediction['Date']
                     else:
-                        st.error("Failed to send the report. Check error above.")
+                        latest_status = "N/A"
+                        latest_date = "N/A"
+        
+                    if not st.session_state.predictions.empty and 'Status' in st.session_state.predictions:
+                        average_status = st.session_state.predictions['Status'].value_counts().idxmax()
+                    else:
+                        average_status = "N/A"
+        
+                    # ---- RECOMMENDATIONS ----
+                    recommendations = []
+        
+                    if average_status == "Stable or Low Instability":
+                        recommendations = [
+                            "Maintain your current healthy habits.",
+                            "Consider sharing your positive experiences with others.",
+                            "Stay engaged in activities that bring you joy."
+                        ]
+                    elif average_status == "Moderate Instability":
+                        recommendations = [
+                            "Reflect on your feelings and consider seeking support.",
+                            "Engage in activities that promote relaxation and well-being.",
+                            "Stay connected with friends and family."
+                        ]
+                    elif average_status == "High Instability or Severe Instability":
+                        recommendations = [
+                            "It may be beneficial to consult with a mental health professional.",
+                            "Consider developing a self-care plan to manage stress.",
+                            "Reach out to support groups or community resources."
+                        ]
+        
+                    # ---- FIXED STRING ISSUE ----
+                    recommendations_text = "\n- ".join(recommendations)
+        
+                    # ---- REPORT CONTENT ----
+                    report_content = f"""
+        Dear {name},
+        
+        We hope this message finds you well. Below is your mental health report based on your recent mood tracking data.
+        
+        Latest Prediction Status: {latest_status}
+        Latest Prediction Date: {latest_date}
+        Average Prediction Status: {average_status}
+        
+        Personalized Recommendations:
+        - {recommendations_text}
+        
+        Thank you for using our service. If you have any questions or need further assistance, please do not hesitate to reach out.
+        
+        Best regards,  
+        Mental Health Support Team
+        """
+        
+                    # ---- GRAPH ----
+                    img = save_mood_tracking_graph()
+        
+                    if img:
+                        img_file = io.BytesIO(img.getvalue())
+                        img_file.seek(0)
+                        img_file.name = "mood_tracking_graph.png"  # important
+        
+                        # ---- SEND EMAIL ----
+                        if send_email_with_attachment(
+                            email,
+                            "Your Mental Health Report",
+                            report_content,
+                            img_file
+                        ):
+                            st.success("Report sent successfully!")
+                        else:
+                            st.error("Failed to send the report. Check error above.")
+                    else:
+                        st.error("Failed to generate the mood tracking graph.")
+        
                 else:
-                    st.error("Failed to generate the mood tracking graph.")
-    
+                    st.error("Please enter a valid email address.")
+        
             else:
-                st.error("Please enter a valid email address.")
-    
-        else:
-            st.error("Please enter both your name and email.")
+                st.error("Please enter both your name and email.")
 
 # In the Connect Page section
 elif page == "Connect Page":
