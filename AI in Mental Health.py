@@ -210,30 +210,54 @@ def send_email(to_email, subject, body):
         return False
 
 def send_email_with_attachment(to_email, subject, body, img_file):
-    from_email = "chbharath0779@gmail.com"  # Replace with your email
-    from_password = "gnfq orjk evec sdwd"  # Replace with your email password
-
-    msg = MIMEMultipart()
-    msg['From'] = from_email
-    msg['To'] = to_email
-    msg['Subject'] = subject
-
-    msg.attach(MIMEText(body, 'plain'))
-
-    # Attach the image to the email
-    img_file.seek(0)  # Ensure the file pointer is at the start
-    msg.attach(MIMEImage(img_file.read(), name='mood_tracking_graph.png'))
-
     try:
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
-            server.login(from_email, from_password)
-            server.send_message(msg)
-        return True
-    except Exception as e:
-        print(f"Failed to send email: {e}")
-        return False
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.image import MIMEImage
+        import os
 
+        from_email = os.getenv("EMAIL")
+        from_password = os.getenv("EMAIL_PASSWORD")
+
+        st.write("DEBUG: Starting email send...")
+
+        msg = MIMEMultipart()
+        msg['From'] = from_email
+        msg['To'] = to_email
+        msg['Subject'] = subject
+
+        msg.attach(MIMEText(body, 'plain'))
+
+        # Attach image if exists
+        if img_file is not None:
+            st.write("DEBUG: Attaching image...")
+            img_data = img_file.read()
+            image = MIMEImage(img_data)
+            image.add_header('Content-Disposition', 'attachment', filename='mood_tracking_graph.png')
+            msg.attach(image)
+
+        st.write("DEBUG: Connecting to SMTP...")
+
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+
+            st.write("DEBUG: Logging in...")
+            server.login(from_email, from_password)
+
+            st.write("DEBUG: Sending email...")
+            server.send_message(msg)
+
+        st.success("DEBUG: Email sent successfully!")
+        return True
+
+    except Exception as e:
+        import traceback
+        st.error(f"EMAIL ERROR: {e}")
+        st.text(traceback.format_exc())
+        return False
 
 
 # Initialize session state for authentication and mood tracking
