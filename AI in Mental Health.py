@@ -141,7 +141,7 @@ def update_admin_password(new_password):
 
 def send_email(to_email, subject, body):
     from_email = "chbharath0779@gmail.com"  # Replace with your email
-    from_password = "gnfq orjk evec sdwd"  # Replace with your email password
+    from_password = "bvgo lods fzbu ftby"  # Replace with your email password
 
     msg = MIMEMultipart()
     msg['From'] = from_email
