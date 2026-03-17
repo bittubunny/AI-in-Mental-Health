@@ -15,40 +15,51 @@ from email.mime.image import MIMEImage
 model = joblib.load('voting_gb_dt_model.pkl')
 
 # Connect to SQLite database
-conn = sqlite3.connect('new_user_data.db')
-c = conn.cursor()
+def get_connection():
+    conn = sqlite3.connect('new_user_data.db', check_same_thread=False)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    return conn
 
-# Create tables if they don't exist
-c.execute('''
-    CREATE TABLE IF NOT EXISTS users (
-        username TEXT PRIMARY KEY,
-        password TEXT
-    )
-''')
 
-# Create a new predictions table with the time_spent column if it doesn't exist
-c.execute('''
-    CREATE TABLE IF NOT EXISTS predictions_new (
-        username TEXT,
-        date DATETIME,
-        prediction INTEGER,
-        status TEXT,
-        time_spent INTEGER,  -- New column for time spent in seconds
-        FOREIGN KEY (username) REFERENCES users (username)
-    )
-''')
-# Create a new chat messages table if it doesn't exist
-c.execute('''
-    CREATE TABLE IF NOT EXISTS chat_messages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
-        message TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-''')
+def init_db():
+    conn = get_connection()
+    c = conn.cursor()
 
-conn.commit()
+    # Users table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            username TEXT PRIMARY KEY,
+            password TEXT
+        )
+    ''')
 
+    # Final predictions table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS predictions (
+            username TEXT,
+            date TEXT,
+            prediction INTEGER,
+            status TEXT,
+            time_spent INTEGER
+        )
+    ''')
+
+    # Chat messages table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS chat_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            message TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    conn.commit()
+    conn.close()
+
+
+# Call this once
+init_db()
 # Check if the old predictions table exists and migrate data if necessary
 c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='predictions'")
 if c.fetchone() is not None:
@@ -69,53 +80,99 @@ conn.commit()
 
 # Create admin account if it doesn't exist
 def create_admin_account():
-    admin_username = "admin"
-    admin_password = "admin891"  # Change this to a more secure password
-    c.execute("INSERT OR IGNORE INTO users (username, password) VALUES (?, ?)", (admin_username, admin_password))
+    conn = get_connection()
+    c = conn.cursor()
+
+    c.execute(
+        "INSERT OR IGNORE INTO users (username, password) VALUES (?, ?)",
+        ("admin", "admin891")
+    )
+
     conn.commit()
+    conn.close()
+
 
 create_admin_account()
 
-# Function to authenticate user
 def authenticate(username, password):
-    c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
-    return c.fetchone() is not None
+    conn = get_connection()
+    c = conn.cursor()
 
-# Function to register user
+    c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
+    result = c.fetchone()
+
+    conn.close()
+    return result is not None
+
+
 def register(username, password):
+    conn = get_connection()
+    c = conn.cursor()
+
     try:
         c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
         conn.commit()
+        conn.close()
         return True
     except sqlite3.IntegrityError:
+        conn.close()
         return False
-
+        
 # Function to save prediction to the database
 def save_prediction(username, date, prediction, status, time_spent):
-    c.execute("INSERT INTO predictions (username, date, prediction, status, time_spent) VALUES (?, ?, ?, ?, ?)", 
-              (username, date, prediction, status, time_spent))
-    conn.commit()
+    conn = get_connection()
+    c = conn.cursor()
 
-# Function to fetch predictions for a user
+    c.execute(
+        "INSERT INTO predictions (username, date, prediction, status, time_spent) VALUES (?, ?, ?, ?, ?)",
+        (username, date, prediction, status, time_spent)
+    )
+
+    conn.commit()
+    conn.close()
+
+
 def fetch_predictions(username):
+    conn = get_connection()
+    c = conn.cursor()
+
     c.execute("SELECT date, prediction, status FROM predictions WHERE username=?", (username,))
     rows = c.fetchall()
-    return pd.DataFrame(rows, columns=["Date", "Prediction", "Status"])
 
+    conn.close()
+    return pd.DataFrame(rows, columns=["Date", "Prediction", "Status"])
+    
 # Function to fetch chat messages with IDs
 def fetch_chat_messages():
+    conn = get_connection()
+    c = conn.cursor()
+
     c.execute("SELECT id, username, message, timestamp FROM chat_messages ORDER BY timestamp")
-    return c.fetchall()
+    messages = c.fetchall()
 
-# Function to save a chat message
+    conn.close()
+    return messages
+
+
 def save_chat_message(username, message):
-    c.execute("INSERT INTO chat_messages (username, message) VALUES (?, ?)", (username, message))
-    conn.commit()
+    conn = get_connection()
+    c = conn.cursor()
 
-# Function to delete a chat message
-def delete_chat_message(message_id):
-    c.execute("DELETE FROM chat_messages WHERE id=?", (message_id,))
+    c.execute("INSERT INTO chat_messages (username, message) VALUES (?, ?)", (username, message))
+
     conn.commit()
+    conn.close()
+
+
+def delete_chat_message(message_id):
+    conn = get_connection()
+    c = conn.cursor()
+
+    c.execute("DELETE FROM chat_messages WHERE id=?", (message_id,))
+
+    conn.commit()
+    conn.close()
+
 
 # Function to make predictions and map to mental health status
 def predict(input_data):
@@ -136,9 +193,14 @@ def map_to_status(yes_count):
 
 # Function to update admin password
 def update_admin_password(new_password):
-    c.execute("UPDATE users SET password=? WHERE username='admin'", (new_password,))
-    conn.commit()
+    conn = get_connection()
+    c = conn.cursor()
 
+    c.execute("UPDATE users SET password=? WHERE username='admin'", (new_password,))
+
+    conn.commit()
+    conn.close()
+    
 def send_email(to_email, subject, body):
     from_email = "chbharath0779@gmail.com"  # Replace with your email
     from_password = "bvgo lods fzbu ftby"  # Replace with your email password
