@@ -392,24 +392,41 @@ elif page == "Mood Tracking":
 
         # Function to save the mood tracking graph as an image
         def save_mood_tracking_graph():
-            if not st.session_state.predictions.empty:
-                # Count occurrences of each status
-                status_counts = st.session_state.predictions['Status'].value_counts()
-
-                # Plotting the graph
+            try:
+                # Check if predictions exist
+                if 'predictions' not in st.session_state or st.session_state.predictions.empty:
+                    return None
+        
+                df = st.session_state.predictions.copy()
+        
+                # Ensure 'Status' column exists
+                if 'Status' not in df.columns:
+                    return None
+        
+                # Count occurrences
+                status_counts = df['Status'].value_counts()
+        
+                if status_counts.empty:
+                    return None
+        
+                # ---- CREATE PLOT ----
                 plt.figure(figsize=(10, 5))
-                plt.bar(status_counts.index, status_counts.values, color='skyblue', alpha=0.7)
-                plt.title('Mental Health Status Distribution', fontsize=16)
-                plt.xlabel('Mental Health Status', fontsize=12)
-                plt.ylabel('Count', fontsize=12)
-                
-                # Save the figure to a BytesIO object
+                plt.bar(status_counts.index.astype(str), status_counts.values)
+                plt.title('Mental Health Status Distribution')
+                plt.xlabel('Mental Health Status')
+                plt.ylabel('Count')
+        
+                # ---- SAVE IMAGE ----
                 img = io.BytesIO()
-                plt.savefig(img, format='png')
-                img.seek(0)  # Rewind the BytesIO object
-                plt.close()  # Close the plot to free memory
+                plt.savefig(img, format='png', bbox_inches='tight')  # important
+                plt.close()
+        
+                img.seek(0)
                 return img
-            return None
+        
+            except Exception as e:
+                st.error(f"Graph error: {e}")  # shows real issue
+                return None
 
         # Display mood tracking graph
         if st.session_state.show_graph:
