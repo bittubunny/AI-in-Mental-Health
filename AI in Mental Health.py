@@ -61,22 +61,7 @@ def init_db():
 # Call this once
 init_db()
 # Check if the old predictions table exists and migrate data if necessary
-c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='predictions'")
-if c.fetchone() is not None:
-    # Copy data from the old predictions table to the new one
-    c.execute('''
-        INSERT INTO predictions_new (username, date, prediction, status)
-        SELECT username, date, prediction, status FROM predictions
-    ''')
-    conn.commit()
-    
-    # Drop the old predictions table
-    c.execute('DROP TABLE predictions')
-    conn.commit()
 
-# Rename the new table to the original table name
-c.execute('ALTER TABLE predictions_new RENAME TO predictions')
-conn.commit()
 
 # Create admin account if it doesn't exist
 def create_admin_account():
@@ -817,8 +802,14 @@ elif page == "Admin Dashboard":
                 st.error("Passwords do not match!")
 
         # Fetch all users
+       
+        conn = get_connection()
+        c = conn.cursor()
+
         c.execute("SELECT username FROM users")
         users = c.fetchall()
+
+        conn.close()
         user_list = [user[0] for user in users]  # Extract usernames from tuples
 
         # Display total number of users in a large box
@@ -894,12 +885,24 @@ elif page == "Admin Dashboard":
         if st.session_state.show_user_deletion:
             if st.button("Delete User"):
                 if delete_user:
+                    conn = get_connection()
+                    c = conn.cursor()
+                    
                     c.execute("DELETE FROM users WHERE username=?", (delete_user,))
                     conn.commit()
+                    
+                    conn.close()
+                    
                     st.success(f"User  '{delete_user}' has been deleted successfully.")
                     # Refresh the user list after deletion
+                    conn = get_connection()
+                    c = conn.cursor()
+                    
                     c.execute("SELECT username FROM users")
                     users = c.fetchall()
+                    
+                    conn.close()
+                    
                     user_list = [user[0] for user in users]  # Update user list
                 else:
                     st.error("Please select a user to delete.")
@@ -908,8 +911,14 @@ elif page == "Admin Dashboard":
         st.subheader("Overall User Activity Monitoring")
 
         # Fetch all predictions for overall statistics
+       
+        conn = get_connection()
+        c = conn.cursor()
+
         c.execute("SELECT username, date, prediction, status FROM predictions")
         predictions = c.fetchall()
+
+        conn.close()
         predictions_df = pd.DataFrame(predictions, columns=["Username", "Date", "Prediction", "Status"])
 
         # Convert the 'Date' column to datetime
