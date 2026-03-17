@@ -204,7 +204,9 @@ def send_email(to_email, subject, body):
             server.send_message(msg)
         return True
     except Exception as e:
-        st.error(f"Email error: {e}")   # 👈 THIS IS KEY
+        import traceback
+        st.error(f"Email error: {e}")
+        st.text(traceback.format_exc())   # 👈 FULL ERROR TRACE
         return False
 
 def send_email_with_attachment(to_email, subject, body, img_file):
