@@ -204,7 +204,7 @@ def send_email(to_email, subject, body):
             server.send_message(msg)
         return True
     except Exception as e:
-        print(f"Failed to send email: {e}")
+        st.error(f"Email error: {e}")   # 👈 THIS IS KEY
         return False
 
 def send_email_with_attachment(to_email, subject, body, img_file):
