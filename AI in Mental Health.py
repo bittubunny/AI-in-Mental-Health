@@ -217,8 +217,8 @@ def send_email_with_attachment(to_email, subject, body, img_file):
         from email.mime.image import MIMEImage
         import os
 
-        from_email = os.getenv("EMAIL")
-        from_password = os.getenv("EMAIL_PASSWORD")
+        from_email = "tejasaiaa12@gmail.com"
+        from_password = "shuv bhco xfbi tpjr"
 
         st.write("DEBUG: Starting email send...")
 
