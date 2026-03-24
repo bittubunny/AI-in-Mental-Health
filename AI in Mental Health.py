@@ -187,8 +187,8 @@ def update_admin_password(new_password):
     conn.close()
     
 def send_email(to_email, subject, body):
-    from_email = "chbharath0779@gmail.com"  # Replace with your email
-    from_password = "bvgolodsfzbuftby"  # Replace with your email password
+    from_email = "tejasaiaa12@gmail.com"  # Replace with your email
+    from_password = "shuv bhco xfbi tpjr"  # Replace with your email password
 
     msg = MIMEMultipart()
     msg['From'] = from_email
